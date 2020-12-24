@@ -9,22 +9,50 @@ on:
       - created
 
 jobs:
-  check_triggered_comment:
+  check_trigger_event_enabled:
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
         shell: bash
-    
-    steps:
-      - name: github actions execution info
-        run: echo "${{ toJson(github) }}"
 
-      - name: Extract trigger string from commit comment
-        if: github.event_name == 'push'
-        run: echo "pushed."
-    
-      - name: Extract trigger string from pull request review comment
-        if: github.event_name == 'issue_comment' && github.event.issue.pull_request != null
-        run: echo "issue comment created."
-  
+    outputs:
+      event_name: ${{ steps.trigger_event.outputs.name }}
+
+    steps:
+      - name: Get triggered event
+        id: trigger_event
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            if [ "${{ contains(github.event.head_commit.message, '[deploy]') }}" ]; then
+              echo "::set-output name=name::pushed_branch"
+            fi
+          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ github.event.issue.pull_request }}" != "null" ]; then
+            if [ "${{ contains(github.event.comment.body, '[deploy]') }}" ]; then
+              echo "::set-output name=name::posted_pull_request_comment"
+            fi
+          fi
+
+      - name: Get comapre branch name when posted pull request comment
+        if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
+        uses: actions/github-script@v2
+        id: compare_branch_name
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const pull_request = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            })
+            return pull_request.data.head.ref
+
+      - name: Set target branch name
+        id: target_branch_name
+        run: |
+          if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
+            echo "::set-output name=branch_name::${{ steps.compare_branch_name.outputs.result }}"
+          else
+            echo "::set-output name=branch_name::${{ github.event.ref }}"
+          fi
