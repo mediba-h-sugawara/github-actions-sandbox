@@ -1,9 +1,6 @@
 name: Commit or pull request comment triggered build
 
 on:
-  push:
-    branches: 
-      - 'release/**'
   issue_comment:
     types: [created, edited]
 
