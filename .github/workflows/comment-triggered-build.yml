@@ -27,7 +27,7 @@ jobs:
             if [ "${{ contains(github.event.head_commit.message, '[deploy]') }}" ]; then
               echo "::set-output name=name::pushed_branch"
             fi
-          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ github.event.issue.pull_request }}" != "null" ]; then
+          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ github.event.issue.pull_request }}" != "" ]; then
             if [ "${{ contains(github.event.comment.body, '[deploy]') }}" ]; then
               echo "::set-output name=name::posted_pull_request_comment"
             fi
@@ -59,4 +59,4 @@ jobs:
 
       - name: Echo target branch name
         run: |
-          echo "${{ steps.target_branch_name.output.branch_name }}"
+          echo "${{ steps.target_branch_name.outputs.branch_name }}"
