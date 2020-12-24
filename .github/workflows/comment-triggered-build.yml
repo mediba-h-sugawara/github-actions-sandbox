@@ -1,0 +1,29 @@
+name: Commit or pull request comment triggered build
+
+on:
+  push:
+    branches: 
+      - 'release/**'
+  pull_request_review_comment:
+    branches: 
+      - 'release/**'
+    types:
+      - created
+
+jobs:
+  check_triggered_comment:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        shell: bash
+    
+    steps:
+      - name: Extract trigger string from commit comment
+        if: github.event_name == 'push'
+        run: ${{ toJson(github) }}
+    
+      - name: Extract trigger string from pull request review comment
+        if: github.event_name == 'pull_request_review_comment'
+        run: ${{ toJson(github) }}
+  
