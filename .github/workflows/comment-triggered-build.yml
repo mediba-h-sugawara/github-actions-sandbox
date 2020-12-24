@@ -59,7 +59,7 @@ jobs:
 
   build:
     needs: check_trigger_event_enabled
-    if: needs.check_trigger_event_enabled.outputs.target_branch_name != ""
+    if: needs.check_trigger_event_enabled.outputs.target_branch_name != ''
     runs-on: ubuntu-latest
 
     defaults:
