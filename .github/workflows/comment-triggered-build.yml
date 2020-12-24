@@ -21,9 +21,9 @@ jobs:
     steps:
       - name: Extract trigger string from commit comment
         if: github.event_name == 'push'
-        run: ${{ toJson(github) }}
+        run: echo "${{ toJson(github) }}"
     
       - name: Extract trigger string from pull request review comment
         if: github.event_name == 'pull_request_review_comment'
-        run: ${{ toJson(github) }}
+        run: echo "${{ toJson(github) }}"
   
