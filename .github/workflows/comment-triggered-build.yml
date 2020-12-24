@@ -1,6 +1,9 @@
 name: Commit or pull request comment triggered build
 
 on:
+  push:
+    branches: 
+      - 'release/**'
   issue_comment:
     types:
       - created
@@ -14,11 +17,14 @@ jobs:
         shell: bash
     
     steps:
+      - name: github actions execution info
+        run: echo "${{ toJson(github) }}"
+
       - name: Extract trigger string from commit comment
         if: github.event_name == 'push'
-        run: echo "${{ toJson(github) }}"
+        run: echo "pushed."
     
       - name: Extract trigger string from pull request review comment
         if: github.event_name == 'issue_comment' && github.event.issue.pull_request
-        run: echo "${{ toJson(github) }}"
+        run: echo "issue comment created."
   
