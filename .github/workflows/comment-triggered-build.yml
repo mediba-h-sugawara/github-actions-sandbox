@@ -17,7 +17,7 @@ jobs:
         shell: bash
 
     outputs:
-      branch_name: ${{ steps.target_branch_name.outputs.branch_name }}
+      target_branch_name: ${{ steps.target_branch_name.outputs.branch_name }}
 
     steps:
       - name: Get triggered event
@@ -53,10 +53,20 @@ jobs:
         run: |
           if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
             echo "::set-output name=branch_name::${{ steps.compare_branch_name.outputs.result }}"
-          else
+          elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
             echo "::set-output name=branch_name::${{ github.event.ref }}"
           fi
 
+  build:
+    needs: check_trigger_event_enabled
+    if: needs.check_trigger_event_enabled.outputs.target_branch_name != ""
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
       - name: Echo target branch name
         run: |
-          echo "${{ steps.target_branch_name.outputs.branch_name }}"
+          echo "${{ needs.check_trigger_event_enabled.outputs.target_branch_name }}"
