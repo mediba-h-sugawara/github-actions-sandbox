@@ -59,7 +59,7 @@ jobs:
 
   build:
     needs: check_enabled_trigger_event
-    if: needs.check_trigger_event_enabled.outputs.target_branch_name != ''
+    if: needs.check_enabled_trigger_event.outputs.target_branch_name != ''
     runs-on: ubuntu-latest
 
     defaults:
@@ -69,4 +69,4 @@ jobs:
     steps:
       - name: Echo target branch name
         run: |
-          echo "${{ needs.check_trigger_event_enabled.outputs.target_branch_name }}"
+          echo "${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}"
