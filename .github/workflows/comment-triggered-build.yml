@@ -2,7 +2,8 @@ name: Commit or pull request comment triggered build
 
 on:
   issue_comment:
-    types: [created, edited]
+    types:
+      - created
 
 jobs:
   check_triggered_comment:
