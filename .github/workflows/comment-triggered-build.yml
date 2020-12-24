@@ -1,4 +1,4 @@
-name: Commit or pull request comment triggered build
+name: Commit comment or pull request comment triggered build
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - created
 
 jobs:
-  check_trigger_event_enabled:
+  check_enabled_trigger_event:
     runs-on: ubuntu-latest
 
     defaults:
@@ -24,11 +24,11 @@ jobs:
         id: trigger_event
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            if "${{ contains(github.event.head_commit.message, '[deploy]') }}"; then
+            if "${{ contains(github.event.head_commit.message, '[build]') }}"; then
               echo "::set-output name=name::pushed_branch"
             fi
           elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ github.event.issue.pull_request }}" != "" ]; then
-            if "${{ contains(github.event.comment.body, '[deploy]') }}"; then
+            if "${{ contains(github.event.comment.body, '[build]') }}"; then
               echo "::set-output name=name::posted_pull_request_comment"
             fi
           fi
@@ -58,7 +58,7 @@ jobs:
           fi
 
   build:
-    needs: check_trigger_event_enabled
+    needs: check_enabled_trigger_event
     if: needs.check_trigger_event_enabled.outputs.target_branch_name != ''
     runs-on: ubuntu-latest
 
