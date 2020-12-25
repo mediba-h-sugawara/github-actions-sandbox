@@ -34,6 +34,13 @@ jobs:
             fi
           fi
 
+      - name: Get target branch when pushed branch
+        id: pushed_branch
+        if: steps.trigger_event.outputs.name == 'pushed_branch'
+        run: |
+          echo "::set-output name=branch_name::${{ github.event.ref }}"
+          echo "::set-output name=commit_hash::${{ github.event.sha }}"
+
       - name: Get comapre branch when posted pull request comment
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         uses: actions/github-script@v3
@@ -48,13 +55,6 @@ jobs:
             })
             return pull_request.data.head
 
-      - name: Get target branch when pushed branch
-        id: pushed_branch
-        if: steps.trigger_event.outputs.name == 'pushed_branch'
-        run: |
-          echo "::set-output name=branch_name::${{ github.event.ref }}"
-          echo "::set-output name=commit_hash::${{ github.event.sha }}"
-
       - name: Get target branch when posted pull request comment
         id: posted_pull_request
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
@@ -65,12 +65,12 @@ jobs:
       - name: Set target branch
         id: target_branch_name
         run: |
-          if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::${{ steps.posted_pull_request.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ steps.posted_pull_request.outputs.commit_hash }}"
-          elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
+          if [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
             echo "::set-output name=branch_name::${{ steps.pushed_branch.outputs.branch_name }}"
             echo "::set-output name=commit_hash::${{ steps.pushed_branch.outputs.commit_hash }}"
+          elif [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
+            echo "::set-output name=branch_name::${{ steps.posted_pull_request.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ steps.posted_pull_request.outputs.commit_hash }}"
           fi
 
   build:
