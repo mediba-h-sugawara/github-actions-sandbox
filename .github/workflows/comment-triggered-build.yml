@@ -46,7 +46,8 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
-            return pull_request.data.head
+            console.log(pull_request.data.head)
+            return pull_request.data.head.ref
 
       - name: Dump target branch info
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
@@ -57,7 +58,7 @@ jobs:
         id: target_branch_name
         run: |
           if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch.outputs.result.ref }}"
+            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch.outputs.result }}"
           elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
             echo "::set-output name=branch_name::${{ github.event.ref }}"
           fi
