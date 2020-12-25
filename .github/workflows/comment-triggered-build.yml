@@ -18,6 +18,7 @@ jobs:
 
     outputs:
       target_branch_name: ${{ steps.target_branch_name.outputs.branch_name }}
+      target_commit_hash: ${{ steps.target_branch_name.outputs.commit_hash }}
 
     steps:
       - name: Get triggered event
@@ -47,18 +48,29 @@ jobs:
             })
             return pull_request.data.head
 
-      - name: Dump target branch info
+      - name: Get target branch when pushed branch
+        id: pushed_branch
+        if: steps.trigger_event.outputs.name == 'pushed_branch'
+        run: |
+          echo "::set-output name=branch_name::${{ github.event.ref }}"
+          echo "::set-output name=commit_hash::${{ github.event.sha }}"
+
+      - name: Get target branch when posted pull request comment
+        id: posted_pull_request
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         run: |
-          echo "${{ fromJson(steps.compare_branch.outputs.result) }}"
+          echo "::set-output name=branch_name::refs/heads/${{ fromJson(steps.compare_branch.outputs.result).ref }}"
+          echo "::set-output name=commit_hash::${{ fromJson(steps.compare_branch.outputs.result).sha }}"
 
-      - name: Set target branch name
+      - name: Set target branch
         id: target_branch_name
         run: |
           if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::refs/heads/${{ fromJson(steps.compare_branch.outputs.result).ref }}"
+            echo "::set-output name=branch_name::${{ steps.posted_pull_request.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ steps.posted_pull_request.outputs.commit_hash }}"
           elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
-            echo "::set-output name=branch_name::${{ github.event.ref }}"
+            echo "::set-output name=branch_name::${{ steps.pushed_branch.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ steps.pushed_branch.outputs.commit_hash }}"
           fi
 
   build:
@@ -71,7 +83,7 @@ jobs:
         shell: bash
 
     steps:
-      - name: Checkout target branch
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}
+      - name: Dump
+        run: |
+          echo "${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}"
+          echo "${{ needs.check_enabled_trigger_event.outputs.target_commit_hash }}"
