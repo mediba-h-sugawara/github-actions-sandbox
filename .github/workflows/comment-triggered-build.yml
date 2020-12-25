@@ -39,15 +39,13 @@ jobs:
         id: compare_branch
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          result-encoding: string
           script: |
             const pull_request = await github.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
-            console.log(pull_request.data.head)
-            return pull_request.data.head.ref
+            return pull_request.data.head
 
       - name: Dump target branch info
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
@@ -58,7 +56,7 @@ jobs:
         id: target_branch_name
         run: |
           if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch.outputs.result }}"
+            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch.outputs.result.ref }}"
           elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
             echo "::set-output name=branch_name::${{ github.event.ref }}"
           fi
