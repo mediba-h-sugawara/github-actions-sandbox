@@ -39,7 +39,7 @@ jobs:
         if: steps.trigger_event.outputs.name == 'pushed_branch'
         run: |
           echo "::set-output name=branch_name::${{ github.event.ref }}"
-          echo "::set-output name=commit_hash::${{ github.event.sha }}"
+          echo "::set-output name=commit_hash::${{ github.sha }}"
 
       - name: Get comapre branch when posted pull request comment
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
