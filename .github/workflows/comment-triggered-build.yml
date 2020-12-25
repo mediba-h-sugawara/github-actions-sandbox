@@ -28,7 +28,7 @@ jobs:
             if "${{ contains(github.event.head_commit.message, '[build]') }}"; then
               echo "::set-output name=name::pushed_branch"
             fi
-          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ fromJson(github.event.issue.pull_request) }}" != "${{ null }}" ]; then
+          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ toJson(github.event.issue.pull_request) }}" != "${{ null }}" ]; then
             if "${{ contains(github.event.comment.body, '[build]') }}"; then
               echo "::set-output name=name::posted_pull_request_comment"
             fi
