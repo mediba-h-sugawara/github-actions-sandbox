@@ -50,13 +50,13 @@ jobs:
       - name: Dump target branch info
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         run: |
-          echo "${{ toJson(steps.compare_branch.outputs.result) }}"
+          echo "${{ fromJson(steps.compare_branch.outputs.result) }}"
 
       - name: Set target branch name
         id: target_branch_name
         run: |
           if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch.outputs.result.ref }}"
+            echo "::set-output name=branch_name::refs/heads/${{ fromJson(steps.compare_branch.outputs.result).ref }}"
           elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
             echo "::set-output name=branch_name::${{ github.event.ref }}"
           fi
