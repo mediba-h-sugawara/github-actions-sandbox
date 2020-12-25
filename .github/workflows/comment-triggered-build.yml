@@ -35,7 +35,7 @@ jobs:
 
       - name: Get comapre branch name when posted pull request comment
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
-        uses: actions/github-script@v2
+        uses: actions/github-script@v3
         id: compare_branch_name
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -52,7 +52,7 @@ jobs:
         id: target_branch_name
         run: |
           if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::${{ steps.compare_branch_name.outputs.result }}"
+            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch_name.outputs.result }}"
           elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
             echo "::set-output name=branch_name::${{ github.event.ref }}"
           fi
@@ -67,6 +67,12 @@ jobs:
         shell: bash
 
     steps:
-      - name: Echo target branch name
+      - name: Checkout target branch name
+        id: checkout_branch
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}
+
+      - name: Dump
         run: |
-          echo "${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}"
+          echo "${{ steps.checkout_branch.outputs }}"
