@@ -75,4 +75,4 @@ jobs:
 
       - name: Dump
         run: |
-          echo "${{ steps.checkout_branch.outputs }}"
+          echo "${{ toJson(steps.checkout_branch.outputs) }}"
