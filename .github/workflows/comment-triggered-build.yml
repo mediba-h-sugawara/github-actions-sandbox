@@ -33,10 +33,10 @@ jobs:
             fi
           fi
 
-      - name: Get comapre branch name when posted pull request comment
+      - name: Get comapre branch when posted pull request comment
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         uses: actions/github-script@v3
-        id: compare_branch_name
+        id: compare_branch
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
@@ -46,13 +46,18 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
-            return pull_request.data.head.ref
+            return pull_request.data.head
+
+      - name: Dump target branch info
+        if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
+        run: |
+          echo "${{ toJson(steps.compare_branch.outputs.result) }}"
 
       - name: Set target branch name
         id: target_branch_name
         run: |
           if [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch_name.outputs.result }}"
+            echo "::set-output name=branch_name::refs/heads/${{ steps.compare_branch.outputs.result.ref }}"
           elif [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
             echo "::set-output name=branch_name::${{ github.event.ref }}"
           fi
@@ -67,12 +72,7 @@ jobs:
         shell: bash
 
     steps:
-      - name: Checkout target branch name
-        id: checkout_branch
+      - name: Checkout target branch
         uses: actions/checkout@v2
         with:
           ref: ${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}
-
-      - name: Dump
-        run: |
-          echo "${{ toJson(steps.checkout_branch.outputs) }}"
