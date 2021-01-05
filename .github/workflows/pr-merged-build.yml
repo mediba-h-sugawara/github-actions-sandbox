@@ -16,6 +16,6 @@ jobs:
         shell: bash
 
     steps:
-      - name: echo commit hash
+      - name: github actions execution info
         run: |
-          echo "${{ github.sha }}"
+          echo "${{ toJson(github) }}"
