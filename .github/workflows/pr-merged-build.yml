@@ -1,0 +1,21 @@
+name: Pull request merged build
+
+on:
+  pull_request:
+    branches:
+      - build
+    types: [closed]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request_merged == true
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: echo commit hash
+        run: |
+          echo "${{ github.sha }}"
