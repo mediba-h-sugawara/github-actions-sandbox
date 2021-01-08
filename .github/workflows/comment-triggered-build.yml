@@ -9,9 +9,7 @@ on:
       - created
 
 jobs:
-  check_release_branch_pushed:
-    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[build]')
-
+  check_enabled_event:
     runs-on: ubuntu-latest
 
     defaults:
@@ -19,32 +17,34 @@ jobs:
         shell: bash
 
     outputs:
-      target_branch_name: ${{ steps.build_target.outputs.branch_name }}
-      target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
+      build_prepared: ${{ steps.build_target.outputs.build_prepared }}
+      branch_name: ${{ steps.build_target.outputs.branch_name }}
+      commit_hash: ${{ steps.build_target.outputs.commit_hash }}
 
     steps:
-      - name: Set build target
-        id: build_target
+      - name: Get triggered event
+        id: trigger_event
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            if "${{ contains(github.event.head_commit.message, '[build]') }}"; then
+              echo "::set-output name=name::pushed_branch"
+            fi
+          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ toJson(github.event.issue.pull_request) }}" != "null" ]; then
+            if "${{ contains(github.event.comment.body, '[build]') }}"; then
+              echo "::set-output name=name::posted_pull_request_comment"
+            fi
+          fi
+
+      - name: Set build target on push event
+        id: build_target_on_push_event
+        if: steps.trigger_event.outputs.name == 'pushed_branch'
         run: |
           echo "::set-output name=branch_name::${{ github.event.ref }}"
           echo "::set-output name=commit_hash::${{ github.sha }}"
 
-  check_pull_request_comment_posted:
-    if: github.event_name == 'issue_comment' && toJson(github.event.issue.pull_request) != null && contains(github.event.comment.body, '[build]')
-
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
-
-    outputs:
-      target_branch_name: ${{ steps.build_target.outputs.branch_name }}
-      target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
-
-    steps:
-      - name: Get compare branch
+      - name: Get compare branch on pull request comment event
         id: compare_branch
+        if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -56,46 +56,31 @@ jobs:
             })
             return pull_request.data.head
 
-      - name: Set build target
-        id: build_target
+      - name: Set build target on pull request comment event
+        id: build_target_on_pull_request_comment_event
+        if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         run: |
           echo "::set-output name=branch_name::refs/heads/${{ fromJson(steps.compare_branch.outputs.result).ref }}"
           echo "::set-output name=commit_hash::${{ fromJson(steps.compare_branch.outputs.result).sha }}"
 
-  prepare_to_build:
-    needs: [ check_release_branch_pushed, check_pull_request_comment_posted ]
-    if: always()
-
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
-
-    outputs:
-      is_prepared: ${{ steps.build_target.outputs.is_prepared }}
-      target_branch_name: ${{ steps.build_target.outputs.branch_name }}
-      target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
-
-    steps:
       - name: Set build target
         id: build_target
         run: |
-          is_prepared=${{ false }}
-          if [ "${{ needs.check_release_branch_pushed.result }}" = "success" ]; then
-            is_prepared=${{ true }}
-            echo "::set-output name=branch_name::${{ needs.check_release_branch_pushed.outputs.target_branch_name }}"
-            echo "::set-output name=commit_hash::${{ needs.check_release_branch_pushed.outputs.target_commit_hash }}"
-          elif [ "${{ needs.check_pull_request_comment_posted.result }}" = "success" ]; then
-            is_prepared=${{ true }}
-            echo "::set-output name=branch_name::${{ needs.check_pull_request_comment_posted.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ needs.check_pull_request_comment_posted.outputs.commit_hash }}"
+          is_build_prepared=false
+          if [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
+            is_build_prepared=true
+            echo "::set-output name=branch_name::${{ steps.build_target_on_push_event.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ steps.build_target_on_push_event.outputs.commit_hash }}"
+          elif [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
+            is_build_prepared=true
+            echo "::set-output name=branch_name::${{ steps.build_target_on_pull_request_comment_event.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ steps.build_target_on_pull_request_comment_event.outputs.commit_hash }}"
           fi
-          echo "::set-output name=is_prepared::${is_prepared}"
+          echo "::set-output name=build_prepared::${is_build_prepared}"
 
   build:
-    needs: prepare_to_build
-    if: needs.prepare_to_build.outputs.is_prepared == 'true'
+    needs: check_enabled_event
+    if: needs.check_enabled_event.outputs.build_prepared == 'true'
 
     runs-on: ubuntu-latest
 
@@ -106,5 +91,5 @@ jobs:
     steps:
       - name: Dump
         run: |
-          echo "${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}"
-          echo "${{ needs.check_enabled_trigger_event.outputs.target_commit_hash }}"
+          echo "${{ needs.check_enabled_event.outputs.target_branch_name }}"
+          echo "${{ needs.check_enabled_event.outputs.target_commit_hash }}"
