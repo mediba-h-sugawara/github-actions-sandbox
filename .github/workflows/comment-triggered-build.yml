@@ -63,8 +63,10 @@ jobs:
           echo "::set-output name=commit_hash::${{ fromJson(steps.compare_branch.outputs.result).sha }}"
 
   prepare_to_build:
-    needs: check_release_branch_pushed
-    if: needs.check_release_branch_pushed.result == 'success'
+    needs: 
+      - check_release_branch_pushed
+      - check_pull_request_comment_posted
+    if: needs.check_release_branch_pushed.result == 'success' || needs.check_pull_request_comment_posted.result == 'success'
 
     runs-on: ubuntu-latest
 
