@@ -95,7 +95,7 @@ jobs:
 
   build:
     needs: prepare_to_build
-    if: needs.prepare_to_build.outputs.is_prepared
+    if: ${{ needs.prepare_to_build.outputs.is_prepared }}
 
     runs-on: ubuntu-latest
 
