@@ -9,7 +9,9 @@ on:
       - created
 
 jobs:
-  check_enabled_trigger_event:
+  check_release_branch_pushed:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[build]')
+
     runs-on: ubuntu-latest
 
     defaults:
@@ -17,34 +19,33 @@ jobs:
         shell: bash
 
     outputs:
-      target_branch_name: ${{ steps.target_branch_name.outputs.branch_name }}
-      target_commit_hash: ${{ steps.target_branch_name.outputs.commit_hash }}
+      target_branch_name: ${{ steps.build_target.outputs.branch_name }}
+      target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
 
     steps:
-      - name: Get triggered event
-        id: trigger_event
-        run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            if "${{ contains(github.event.head_commit.message, '[build]') }}"; then
-              echo "::set-output name=name::pushed_branch"
-            fi
-          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "${{ toJson(github.event.issue.pull_request) }}" != "null" ]; then
-            if "${{ contains(github.event.comment.body, '[build]') }}"; then
-              echo "::set-output name=name::posted_pull_request_comment"
-            fi
-          fi
-
-      - name: Get target branch when pushed branch
-        id: pushed_branch
-        if: steps.trigger_event.outputs.name == 'pushed_branch'
+      - name: Set build target
+        id: build_target
         run: |
           echo "::set-output name=branch_name::${{ github.event.ref }}"
           echo "::set-output name=commit_hash::${{ github.sha }}"
 
-      - name: Get comapre branch when posted pull request comment
-        if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
-        uses: actions/github-script@v3
+  check_pull_request_comment_posted:
+    if: github.event_name == 'issue_comment' && toJson(github.event.issue.pull_request) != null && contains(github.event.comment.body, '[build]')
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    outputs:
+      target_branch_name: ${{ steps.build_target.outputs.branch_name }}
+      target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
+
+    steps:
+      - name: Get compare branch
         id: compare_branch
+        uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -55,27 +56,41 @@ jobs:
             })
             return pull_request.data.head
 
-      - name: Get target branch when posted pull request comment
-        id: posted_pull_request
-        if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
+      - name: Set build target
+        id: build_target
         run: |
           echo "::set-output name=branch_name::refs/heads/${{ fromJson(steps.compare_branch.outputs.result).ref }}"
           echo "::set-output name=commit_hash::${{ fromJson(steps.compare_branch.outputs.result).sha }}"
 
-      - name: Set target branch
-        id: target_branch_name
+  prepare_to_build:
+    needs: [ check_release_branch_pushed, check_pull_request_comment_posted ]
+    if: needs.check_release_branch_pushed.result == 'success' || needs.check_pull_request_comment_posted.result == 'success'
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    outputs:
+      target_branch_name: ${{ steps.build_target.outputs.branch_name }}
+      target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
+
+    steps:
+      - name: Set build target
+        id: build_target
         run: |
-          if [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
-            echo "::set-output name=branch_name::${{ steps.pushed_branch.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ steps.pushed_branch.outputs.commit_hash }}"
-          elif [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::${{ steps.posted_pull_request.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ steps.posted_pull_request.outputs.commit_hash }}"
+          if [ "${{ needs.check_release_branch_pushed.result }}" = "success" ]; then
+            echo "::set-output name=branch_name::${{ needs.check_release_branch_pushed.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ needs.check_release_branch_pushed.outputs.commit_hash }}"
+          elif [ "${{ needs.check_pull_request_comment_posted.result }}" = "success" ]; then
+            echo "::set-output name=branch_name::${{ needs.check_pull_request_comment_posted.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ needs.check_pull_request_comment_posted.outputs.commit_hash }}"
           fi
 
   build:
-    needs: check_enabled_trigger_event
-    if: needs.check_enabled_trigger_event.outputs.target_branch_name != ''
+    needs: prepare_to_build
+
     runs-on: ubuntu-latest
 
     defaults:
