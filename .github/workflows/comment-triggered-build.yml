@@ -66,7 +66,7 @@ jobs:
     needs: 
       - check_release_branch_pushed
       - check_pull_request_comment_posted
-    if: needs.check_release_branch_pushed.result == 'success' || needs.check_pull_request_comment_posted.result == 'success'
+    if: always()
 
     runs-on: ubuntu-latest
 
@@ -79,16 +79,10 @@ jobs:
       target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
 
     steps:
-      - name: Set build target
-        id: build_target
+      - name: debug
         run: |
-          if [ "${{ needs.check_release_branch_pushed.result }}" = "success" ]; then
-            echo "::set-output name=branch_name::${{ needs.check_release_branch_pushed.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ needs.check_release_branch_pushed.outputs.commit_hash }}"
-          elif [ "${{ needs.check_pull_request_comment_posted.result }}" = "success" ]; then
-            echo "::set-output name=branch_name::${{ needs.check_pull_request_comment_posted.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ needs.check_pull_request_comment_posted.outputs.commit_hash }}"
-          fi
+          echo "check_release_branch_pushed:" ${{ needs.check_release_branch_pushed.result }}
+          echo "check_pull_request_comment_posted:" ${{ needs.check_pull_request_comment_posted.result }}
 
   build:
     needs: prepare_to_build
