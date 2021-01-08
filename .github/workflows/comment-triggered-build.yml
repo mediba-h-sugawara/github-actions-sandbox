@@ -84,6 +84,11 @@ jobs:
           echo "check_release_branch_pushed:" ${{ needs.check_release_branch_pushed.result }}
           echo "check_pull_request_comment_posted:" ${{ needs.check_pull_request_comment_posted.result }}
 
+      - name: check or condition
+        if: needs.check_release_branch_pushed.result == 'success' || needs.check_pull_request_comment_posted.result == 'success'
+        run: |
+          echo "partial successed."
+
   build:
     needs: prepare_to_build
 
