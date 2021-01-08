@@ -63,9 +63,7 @@ jobs:
           echo "::set-output name=commit_hash::${{ fromJson(steps.compare_branch.outputs.result).sha }}"
 
   prepare_to_build:
-    needs: 
-      - check_release_branch_pushed
-      - check_pull_request_comment_posted
+    needs: [ check_release_branch_pushed, check_pull_request_comment_posted ]
     if: always()
 
     runs-on: ubuntu-latest
@@ -75,22 +73,28 @@ jobs:
         shell: bash
 
     outputs:
+      is_build_prepared: ${{ steps.build_target.outputs.is_prepared }}
       target_branch_name: ${{ steps.build_target.outputs.branch_name }}
       target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
 
     steps:
-      - name: debug
+      - name: Set build target
+        id: build_target
         run: |
-          echo "check_release_branch_pushed:" ${{ needs.check_release_branch_pushed.result }}
-          echo "check_pull_request_comment_posted:" ${{ needs.check_pull_request_comment_posted.result }}
-
-      - name: check or condition
-        if: needs.check_release_branch_pushed.result == 'success' || needs.check_pull_request_comment_posted.result == 'success'
-        run: |
-          echo "partial successed."
+          is_prepared=false
+          if [ "${{ needs.check_release_branch_pushed.result }}" = "success" ]; then
+            echo "::set-output name=is_prepared::true"
+            echo "::set-output name=branch_name::${{ needs.check_release_branch_pushed.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ needs.check_release_branch_pushed.outputs.commit_hash }}"
+          elif [ "${{ needs.check_pull_request_comment_posted.result }}" = "success" ]; then
+            echo "::set-output name=is_prepared::true"
+            echo "::set-output name=branch_name::${{ needs.check_pull_request_comment_posted.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ needs.check_pull_request_comment_posted.outputs.commit_hash }}"
+          fi
 
   build:
     needs: prepare_to_build
+    if: needs.prepare_to_build.outputs.is_build_prepared
 
     runs-on: ubuntu-latest
 
