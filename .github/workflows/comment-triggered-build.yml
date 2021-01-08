@@ -83,14 +83,15 @@ jobs:
         run: |
           is_prepared=false
           if [ "${{ needs.check_release_branch_pushed.result }}" = "success" ]; then
-            echo "::set-output name=is_prepared::true"
-            echo "::set-output name=branch_name::${{ needs.check_release_branch_pushed.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ needs.check_release_branch_pushed.outputs.commit_hash }}"
+            is_prepared=true
+            echo "::set-output name=branch_name::${{ needs.check_release_branch_pushed.outputs.target_branch_name }}"
+            echo "::set-output name=commit_hash::${{ needs.check_release_branch_pushed.outputs.target_commit_hash }}"
           elif [ "${{ needs.check_pull_request_comment_posted.result }}" = "success" ]; then
-            echo "::set-output name=is_prepared::true"
+            is_prepared=true
             echo "::set-output name=branch_name::${{ needs.check_pull_request_comment_posted.outputs.branch_name }}"
             echo "::set-output name=commit_hash::${{ needs.check_pull_request_comment_posted.outputs.commit_hash }}"
           fi
+          echo "::set-output name=is_prepared::${is_prepared}"
 
   build:
     needs: prepare_to_build
