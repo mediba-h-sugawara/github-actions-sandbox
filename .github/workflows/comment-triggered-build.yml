@@ -81,13 +81,13 @@ jobs:
       - name: Set build target
         id: build_target
         run: |
-          is_prepared=false
+          is_prepared=${{ false }}
           if [ "${{ needs.check_release_branch_pushed.result }}" = "success" ]; then
-            is_prepared=true
+            is_prepared=${{ true }}
             echo "::set-output name=branch_name::${{ needs.check_release_branch_pushed.outputs.target_branch_name }}"
             echo "::set-output name=commit_hash::${{ needs.check_release_branch_pushed.outputs.target_commit_hash }}"
           elif [ "${{ needs.check_pull_request_comment_posted.result }}" = "success" ]; then
-            is_prepared=true
+            is_prepared=${{ true }}
             echo "::set-output name=branch_name::${{ needs.check_pull_request_comment_posted.outputs.branch_name }}"
             echo "::set-output name=commit_hash::${{ needs.check_pull_request_comment_posted.outputs.commit_hash }}"
           fi
@@ -95,7 +95,7 @@ jobs:
 
   build:
     needs: prepare_to_build
-    if: needs.prepare_to_build.outputs.is_prepared == 'true'
+    if: needs.prepare_to_build.outputs.is_prepared
 
     runs-on: ubuntu-latest
 
