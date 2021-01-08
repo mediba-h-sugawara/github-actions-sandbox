@@ -73,7 +73,7 @@ jobs:
         shell: bash
 
     outputs:
-      is_build_prepared: ${{ steps.build_target.outputs.is_prepared }}
+      is_prepared: ${{ steps.build_target.outputs.is_prepared }}
       target_branch_name: ${{ steps.build_target.outputs.branch_name }}
       target_commit_hash: ${{ steps.build_target.outputs.commit_hash }}
 
@@ -95,7 +95,7 @@ jobs:
 
   build:
     needs: prepare_to_build
-    if: needs.prepare_to_build.outputs.is_build_prepared
+    if: needs.prepare_to_build.outputs.is_prepared == 'true'
 
     runs-on: ubuntu-latest
 
