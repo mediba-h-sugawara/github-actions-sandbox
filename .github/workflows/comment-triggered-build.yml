@@ -107,9 +107,9 @@ jobs:
 
     steps:
       - name: Check build prepared status
-        if: needs.check_enabled_event.result != 'success' || needs.check_enabled_event.outputs.build_prepared != 'true'
         run: |
-          exit 1
+          echo "${{ needs.check_enabled_event.result }}"
+          echo "${{ needs.check_enabled_event.outputs.build_prepared }}"
 
       - name: Check build conclusion
         uses: technote-space/workflow-conclusion-action@v1
