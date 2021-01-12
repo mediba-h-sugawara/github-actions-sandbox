@@ -93,3 +93,18 @@ jobs:
         run: |
           echo "${{ needs.check_enabled_event.outputs.target_branch_name }}"
           echo "${{ needs.check_enabled_event.outputs.target_commit_hash }}"
+
+  notify_slack:
+    needs: build
+    if: needs.check_enabled_event.result == 'success' && needs.check_enabled_event.outputs.build_prepared == 'true'
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Dump
+        run: |
+          echo "Notify slack"
