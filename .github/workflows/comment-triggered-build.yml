@@ -91,8 +91,9 @@ jobs:
     steps:
       - name: Dump
         run: |
-          echo "${{ needs.check_enabled_event.outputs.target_branch_name }}"
-          echo "${{ needs.check_enabled_event.outputs.target_commit_hash }}"
+          echo "${{ needs.check_enabled_event.outputs.build_prepared }}"
+          echo "${{ needs.check_enabled_event.outputs.branch_name }}"
+          echo "${{ needs.check_enabled_event.outputs.commit_hash }}"
 
   notify_slack:
     needs: build
