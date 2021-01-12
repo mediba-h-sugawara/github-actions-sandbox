@@ -96,7 +96,7 @@ jobs:
 
   notify_slack:
     needs: build
-    if: needs.check_enabled_event.result == 'success' && needs.check_enabled_event.outputs.build_prepared == 'true'
+    if: always()
 
     runs-on: ubuntu-latest
 
@@ -105,6 +105,20 @@ jobs:
         shell: bash
 
     steps:
-      - name: Dump
+      - name: Check build prepared status
+        if: needs.check_enabled_event.result != 'success' || needs.check_enabled_event.outputs.build_prepared != 'true'
         run: |
-          echo "Notify slack"
+          exit 1
+
+      - name: Check build conclusion
+        uses: technote-space/workflow-conclusion-action@v1
+
+      - name: Notify slack on build success
+        if: env.WORKFLOW_CONCLUSION == 'success'
+        run: |
+          echo "Notify slack on success."
+
+      - name: Notify slack on build failure
+        if: env.WORKFLOW_CONCLUSION != 'success'
+        run: |
+          echo "Notify slack on failure."
