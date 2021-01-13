@@ -9,7 +9,7 @@ on:
       - created
 
 jobs:
-  check_enabled_trigger_event:
+  check_enabled_event:
     runs-on: ubuntu-latest
 
     defaults:
@@ -17,8 +17,9 @@ jobs:
         shell: bash
 
     outputs:
-      target_branch_name: ${{ steps.target_branch_name.outputs.branch_name }}
-      target_commit_hash: ${{ steps.target_branch_name.outputs.commit_hash }}
+      build_prepared: ${{ steps.build_target.outputs.build_prepared }}
+      branch_name: ${{ steps.build_target.outputs.branch_name }}
+      commit_hash: ${{ steps.build_target.outputs.commit_hash }}
 
     steps:
       - name: Get triggered event
@@ -34,17 +35,17 @@ jobs:
             fi
           fi
 
-      - name: Get target branch when pushed branch
-        id: pushed_branch
+      - name: Set build target on push event
+        id: build_target_on_push_event
         if: steps.trigger_event.outputs.name == 'pushed_branch'
         run: |
           echo "::set-output name=branch_name::${{ github.event.ref }}"
           echo "::set-output name=commit_hash::${{ github.sha }}"
 
-      - name: Get comapre branch when posted pull request comment
+      - name: Get compare branch on pull request comment event
+        id: compare_branch
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         uses: actions/github-script@v3
-        id: compare_branch
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -55,27 +56,32 @@ jobs:
             })
             return pull_request.data.head
 
-      - name: Get target branch when posted pull request comment
-        id: posted_pull_request
+      - name: Set build target on pull request comment event
+        id: build_target_on_pull_request_comment_event
         if: steps.trigger_event.outputs.name == 'posted_pull_request_comment'
         run: |
           echo "::set-output name=branch_name::refs/heads/${{ fromJson(steps.compare_branch.outputs.result).ref }}"
           echo "::set-output name=commit_hash::${{ fromJson(steps.compare_branch.outputs.result).sha }}"
 
-      - name: Set target branch
-        id: target_branch_name
+      - name: Set build target
+        id: build_target
         run: |
+          is_build_prepared=false
           if [ "${{ steps.trigger_event.outputs.name }}" == "pushed_branch" ]; then
-            echo "::set-output name=branch_name::${{ steps.pushed_branch.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ steps.pushed_branch.outputs.commit_hash }}"
+            is_build_prepared=true
+            echo "::set-output name=branch_name::${{ steps.build_target_on_push_event.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ steps.build_target_on_push_event.outputs.commit_hash }}"
           elif [ "${{ steps.trigger_event.outputs.name }}" == "posted_pull_request_comment" ]; then
-            echo "::set-output name=branch_name::${{ steps.posted_pull_request.outputs.branch_name }}"
-            echo "::set-output name=commit_hash::${{ steps.posted_pull_request.outputs.commit_hash }}"
+            is_build_prepared=true
+            echo "::set-output name=branch_name::${{ steps.build_target_on_pull_request_comment_event.outputs.branch_name }}"
+            echo "::set-output name=commit_hash::${{ steps.build_target_on_pull_request_comment_event.outputs.commit_hash }}"
           fi
+          echo "::set-output name=build_prepared::${is_build_prepared}"
 
   build:
-    needs: check_enabled_trigger_event
-    if: needs.check_enabled_trigger_event.outputs.target_branch_name != ''
+    needs: check_enabled_event
+    if: needs.check_enabled_event.outputs.build_prepared == 'true'
+
     runs-on: ubuntu-latest
 
     defaults:
@@ -85,5 +91,36 @@ jobs:
     steps:
       - name: Dump
         run: |
-          echo "${{ needs.check_enabled_trigger_event.outputs.target_branch_name }}"
-          echo "${{ needs.check_enabled_trigger_event.outputs.target_commit_hash }}"
+          echo "${{ needs.check_enabled_event.outputs.build_prepared }}"
+          echo "${{ needs.check_enabled_event.outputs.branch_name }}"
+          echo "${{ needs.check_enabled_event.outputs.commit_hash }}"
+
+  notify_slack:
+    needs: [check_enabled_event, build]
+    if: always()
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check build prepared status
+        if: needs.check_enabled_event.result != 'success'
+        run: |
+          exit 1
+
+      - name: Check build conclusion
+        if: needs.check_enabled_event.outputs.build_prepared == 'true'
+        uses: technote-space/workflow-conclusion-action@v1
+
+      - name: Notify slack on build success
+        if: needs.check_enabled_event.outputs.build_prepared == 'true' && env.WORKFLOW_CONCLUSION == 'success'
+        run: |
+          echo "Notify slack on success."
+
+      - name: Notify slack on build failure
+        if: needs.check_enabled_event.outputs.build_prepared == 'true' && env.WORKFLOW_CONCLUSION != 'success'
+        run: |
+          echo "Notify slack on failure."
