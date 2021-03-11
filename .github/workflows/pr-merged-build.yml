@@ -36,4 +36,4 @@ jobs:
 
       - name: pull request info
         run: |
-          echo "${{ fromJson(steps.pull_request_info.outputs.result) }}"
+          echo "${{ steps.pull_request_info.outputs.result }}"
