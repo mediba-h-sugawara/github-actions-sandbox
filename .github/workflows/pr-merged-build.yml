@@ -32,7 +32,7 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
-            return pull_request.data.head
+            return pull_request.data
 
       - name: pull request info
         run: |
