@@ -19,3 +19,20 @@ jobs:
       - name: github actions execution info
         run: |
           echo "${{ toJson(github) }}"
+
+      - name: get pull request info
+        id: pull_request_info
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pull_request = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            })
+            return pull_request.data.head
+
+      - name: pull request info
+        run: |
+          echo "${{ fromJson(steps.pull_request_info.outputs.result) }}"
