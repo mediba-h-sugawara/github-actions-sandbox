@@ -1,0 +1,37 @@
+name: Post processing after deploy to production
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - closed
+
+jobs:
+  check_post_processing_enabled:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Get tag name from latest the release
+        id: latest_release
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const latest_release = await github.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+            return latest_release.data.tag_name
+    
+      - name: Get tag name from user reserved
+        id: user_reserved
+        if: github.event.pull_request.body != ""
+        run: |
+          tag_name=`echo "${{ github.event.pull_request.body }}" | grep "tag:"`
+          echo "::set-output name=result::${tag_name}"
