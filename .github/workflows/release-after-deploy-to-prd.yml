@@ -27,23 +27,15 @@ jobs:
       - name: Get tag name from latest the release
         id: latest_release_tag
         uses: actions/github-script@v3
+        continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            try {
-              const latest_release = await github.repos.getLatestRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo
-              })
-              return latest_release.data.tag_name
-            } catch (e) {
-              if (e instanceof RequestError) {
-                console.log(e.Message)
-                return ""
-              } else {
-                throw e
-              }
-            }
+            const latest_release = await github.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+            return latest_release.data.tag_name
     
       - name: Determine next the release tag name
         id: next_release_tag
