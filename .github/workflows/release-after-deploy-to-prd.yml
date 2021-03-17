@@ -27,7 +27,8 @@ jobs:
         id: user_reserved_tag
         if: github.event.pull_request.body != ''
         run: |
-          tag_name=`echo "${{ github.event.pull_request.body }}" | grep "tag:" | tail -n 1 | sed -E "s/tag: (v([0-9]+.[0-9]+.[0-9]+))/\1/"`
+          body="${{ github.event.pull_request.body }}"
+          tag_name=`echo "${body}" | grep "tag:" | tail -n 1 | sed -E "s/tag: (v([0-9]+.[0-9]+.[0-9]+))/\1/"`
           echo "::set-output name=result::${tag_name}"
 
       - name: Get tag name from latest the release
