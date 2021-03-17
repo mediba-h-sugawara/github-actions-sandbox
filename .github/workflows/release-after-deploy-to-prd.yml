@@ -30,11 +30,20 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const latest_release = await github.repos.getLatestRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            })
-            return latest_release.data.tag_name
+            try {
+              const latest_release = await github.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              })
+              return latest_release.data.tag_name
+            } catch (e) {
+              if (e instanceof HttpError) {
+                console.log(e.Message)
+                return ""
+              } else {
+                throw e
+              }
+            }
     
       - name: Determine next the release tag name
         id: next_release_tag
