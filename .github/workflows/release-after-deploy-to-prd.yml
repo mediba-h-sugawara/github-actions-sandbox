@@ -17,6 +17,12 @@ jobs:
         shell: bash
 
     steps:
+      - name: Determine next the release describe
+        id: next_release_describe
+        run: |
+          describe=`echo "${{ github.event.pull_request.body }}" | grep -v "tag:"`
+          echo "::set-output name=content::${describe}"
+    
       - name: Get tag name from user reserved
         id: user_reserved_tag
         if: github.event.pull_request.body != ''
@@ -51,6 +57,7 @@ jobs:
           fi
           echo "::set-output name=name::${release_tag_name}"
 
-      - name: Set next the release tag name
+      - name: Set next the release info
         run: |
+          echo "${{ steps.next_release_describe.outputs.content }}"
           echo "${{ steps.next_release_tag.outputs.name }}"
