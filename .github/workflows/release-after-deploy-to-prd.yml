@@ -1,4 +1,4 @@
-name: Post processing after deploy to production
+name: Release after deploy to production
 
 on:
   pull_request:
