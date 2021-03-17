@@ -4,8 +4,8 @@ on:
   pull_request:
     branches:
       - build
-      - master
-    types: [closed]
+    types:
+      - closed
 
 jobs:
   build:
