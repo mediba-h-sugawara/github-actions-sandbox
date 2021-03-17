@@ -37,7 +37,7 @@ jobs:
               })
               return latest_release.data.tag_name
             } catch (e) {
-              if (e instanceof HttpError) {
+              if (e instanceof requestError.RequestError) {
                 console.log(e.Message)
                 return ""
               } else {
