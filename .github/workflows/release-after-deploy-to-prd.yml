@@ -51,7 +51,7 @@ jobs:
         run: |
           release_tag_name="${DEFAULT_RELEASE_TAG_NAME}"
           if [ -n "${{ steps.latest_release_tag.outputs.result }}" ]; then
-            release_tag_name="${{ steps.latest_release_tag.outputs.result }}"
+            release_tag_name=`echo "${{ steps.latest_release_tag.outputs.result }}" | awk -F . '{print $1 "." $2+1 "." "0"}'`
           fi
           if [ -n "${{ steps.user_reserved_tag.outputs.result }}" ]; then
             release_tag_name="${{ steps.user_reserved_tag.outputs.result }}"
