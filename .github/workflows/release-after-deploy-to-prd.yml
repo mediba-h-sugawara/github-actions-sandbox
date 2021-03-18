@@ -26,6 +26,7 @@ jobs:
       - name: Search tag name from pull request body
         id: regex_match
         if: github.event.pull_request.body != ''
+        uses: actions-ecosystem/action-regex-match@v2
         with:
           text: ${{ github.event.pull_request.body }}
           regex: 'tag: (v([0-9]+.[0-9]+.[0-9]+))'
