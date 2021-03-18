@@ -1,4 +1,4 @@
-name: Release after deploy to production
+name: Create release after deploy to production
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - closed
 
 jobs:
-  check_post_processing_enabled:
+  create_release:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true
 
