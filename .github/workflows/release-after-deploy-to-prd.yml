@@ -82,12 +82,11 @@ jobs:
       - name: Create next the release
         uses: actions/github-script@v3
         with:
-          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             github.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: '${{ steps.next_release_tag.outputs.name }}',
-              name: '${{ steps.next_release_title.outputs.value }}',
-              body: '${{ steps.next_release_describe.outputs.content }}',
+              name: '${{ steps.next_release_title.outputs.value }}'
             })
