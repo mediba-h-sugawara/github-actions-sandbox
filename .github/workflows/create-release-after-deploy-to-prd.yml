@@ -37,6 +37,7 @@ jobs:
         continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
           script: |
             const latest_release = await github.repos.getLatestRelease({
               owner: context.repo.owner,
