@@ -68,9 +68,8 @@ jobs:
         id: next_release_describe
         run: |
           describe=`echo "${{ github.event.pull_request.body }}" | grep -v "tag:"`
-          describe="${describe//'%'/'%25'}"
-          describe="${describe//$'\n'/'%0A'}"
-          describe="${describe//$'\r'/'%0D'}"
+          describe="${describe//$'\n'/'\n'}"
+          describe="${describe//$'\r'/'\r'}"
           echo "::set-output name=content::${describe}"
 
       - name: Set next the release info
@@ -89,5 +88,5 @@ jobs:
               repo: context.repo.repo,
               tag_name: '${{ steps.next_release_tag.outputs.name }}',
               name: '${{ steps.next_release_title.outputs.value }}',
-              body: "${{ steps.next_release_describe.outputs.content }}"
+              body: '${{ steps.next_release_describe.outputs.content }}'
             })
