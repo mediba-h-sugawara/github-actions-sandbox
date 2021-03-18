@@ -21,6 +21,9 @@ jobs:
         id: next_release_describe
         run: |
           describe=`echo "${{ github.event.pull_request.body }}" | grep -v "tag:"`
+          describe="${describe//'%'/'%25'}"
+          describe="${describe//$'\n'/'%0A'}"
+          describe="${describe//$'\r'/'%0D'}"
           echo "::set-output name=content::${describe}"
     
       - name: Search tag name from pull request body
