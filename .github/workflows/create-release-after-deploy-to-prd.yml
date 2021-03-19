@@ -17,20 +17,6 @@ jobs:
         shell: bash
 
     steps:
-      - name: Search tag name from pull request body
-        id: regex_match
-        if: github.event.pull_request.body != ''
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.event.pull_request.body }}
-          regex: 'tag: (v([0-9]+.[0-9]+.[0-9]+))'
-
-      - name: Get tag name from user reserved
-        id: user_reserved_tag
-        if: steps.regex_match.outputs.match != ''
-        run: |
-          echo "::set-output name=result::${{ steps.regex_match.outputs.group1 }}"
-
       - name: Get tag name from latest the release
         id: latest_release_tag
         uses: actions/github-script@v3
@@ -45,7 +31,21 @@ jobs:
             })
             return latest_release.data.tag_name
 
-      - name: Determine next the release tag name
+      - name: Search pull request body for user reserved tag name
+        id: regex_match
+        if: github.event.pull_request.body != ''
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.event.pull_request.body }}
+          regex: 'tag: (v([0-9]+.[0-9]+.[0-9]+))'
+
+      - name: Get tag name from search results
+        id: user_reserved_tag
+        if: steps.regex_match.outputs.match != ''
+        run: |
+          echo "::set-output name=result::${{ steps.regex_match.outputs.group1 }}"
+
+      - name: Determine tag name of next the release 
         id: next_release_tag
         env:
           DEFAULT_RELEASE_TAG_NAME: v1.0.0
@@ -59,13 +59,13 @@ jobs:
           fi
           echo "::set-output name=name::${release_tag_name}"
 
-      - name: Determine next the release title
+      - name: Determine title of next the release
         id: next_release_title
         run: |
           compare_branch_name="${{ github.event.pull_request.head.ref }}"
           echo "::set-output name=value::${compare_branch_name^}"
 
-      - name: Determine next the release describe
+      - name: Determine describe of next the release
         id: next_release_describe
         run: |
           describe=`echo "${{ github.event.pull_request.body }}" | grep -v "tag:"`
@@ -73,13 +73,13 @@ jobs:
           describe="${describe//$'\r'/'\r'}"
           echo "::set-output name=content::${describe}"
 
-      - name: Set next the release info
+      - name: Show a next the release info
         run: |
           echo "tag_name: ${{ steps.next_release_tag.outputs.name }}"
           echo "title: ${{ steps.next_release_title.outputs.value }}"
           echo "body: ${{ steps.next_release_describe.outputs.content }}"
 
-      - name: Create next the release
+      - name: Create a next the release
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
