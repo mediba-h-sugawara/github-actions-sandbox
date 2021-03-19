@@ -10,7 +10,7 @@ on:
 jobs:
   create_release:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
 
     defaults:
       run:
